@@ -1,0 +1,2 @@
+# static_PayPalQRcode
+在第三方网站嵌合PayPal支付QRcode
