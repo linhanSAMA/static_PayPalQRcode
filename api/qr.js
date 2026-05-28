@@ -53,16 +53,13 @@ export default async function handler(req, res) {
 
     const invoiceData = await invoiceRes.json();
 
-    // PayPal 返回链接数组，从 self 链接里提取 Invoice ID
-    let invoiceId = invoiceData.id;
-    if (!invoiceId && Array.isArray(invoiceData)) {
-      const selfLink = invoiceData.find(link => link.rel === 'self');
-      if (selfLink) {
-        invoiceId = selfLink.href.split('/').pop();
-      }
-    }
+    // 兼容三种返回格式
+    let invoiceId = invoiceData.id
+      || (Array.isArray(invoiceData) && invoiceData.find(l => l.rel === 'self')?.href.split('/').pop())
+      || (invoiceData.href && invoiceData.href.split('/').pop())
+      || null;
+    
     if (!invoiceId) throw new Error('无法提取 Invoice ID：' + JSON.stringify(invoiceData));
-
     // 第三步：发送 Invoice（状态变为 SENT，才能生成 QR 码）
     await fetch(`https://api-m.paypal.com/v2/invoicing/invoices/${invoiceId}/send`, {
       method: 'POST',
