@@ -84,7 +84,18 @@ export default async function handler(req, res) {
     );
 
     const qrBuffer = await qrRes.arrayBuffer();
-    const qrBase64 = Buffer.from(qrBuffer).toString('base64');
+    const rawBase64 = Buffer.from(qrBuffer).toString('base64');
+    const rawText = Buffer.from(qrBuffer).toString('utf-8');
+    
+    // PayPal 返回 multipart 格式，需要提取里面的图片 Base64
+    let qrBase64 = rawBase64;
+    if (rawText.includes('Content-Type') && rawText.includes('iVBOR')) {
+      // 找到 PNG 图片数据（iVBOR 是 PNG base64 的开头）
+      const match = rawText.match(/iVBOR[\s\S]+/);
+      if (match) {
+        qrBase64 = match[0].split('--')[0].trim();
+      }
+    }
 
     return res.status(200).json({
       success: true,
